@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>/æ/ Target Game</title>
+  <title>Pronunciation Target Game</title>
   <style>
     body {
       background: #121212;
@@ -15,16 +15,16 @@
     #target {
       width: 120px;
       height: 120px;
-      background: red;
+      background: radial-gradient(circle, #ff4d4d, #b30000);
       border-radius: 50%;
       margin: 2rem auto;
-      transition: transform 0.2s ease, opacity 0.2s ease;
+      transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
     }
     #target.hit {
-      transform: translateY(100px) rotate(45deg) scale(0.5);
-      opacity: 0.2;
+      transform: rotateX(75deg) translateY(150px) scale(0.3);
+      opacity: 0;
     }
-    #status, #detection {
+    #status, #detection, #score, #currentWord {
       font-size: 1.5rem;
       margin-top: 1rem;
     }
@@ -46,46 +46,70 @@
   </style>
 </head>
 <body>
-  <h1>🎯 Pronunciation Target: "cat"</h1>
+  <h1>🎯 Pronunciation Target Game</h1>
   <div id="target"></div>
-  <button onclick="startListening()">🎤 Say "cat"</button>
+  <div id="currentWord">Say: "cat"</div>
+  <button onclick="startListening()">🎤 Start Game</button>
   <div id="status">Waiting...</div>
   <div id="detection" class="not-detecting">Status: ⏸ idle</div>
+  <div id="score">Score: 0</div>
+  <audio id="hitSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f0a569d5f.mp3" preload="auto"></audio>
 
   <script>
     const target = document.getElementById('target');
     const status = document.getElementById('status');
     const detectionStatus = document.getElementById('detection');
+    const currentWordDisplay = document.getElementById('currentWord');
+    const scoreDisplay = document.getElementById('score');
+    const hitSound = document.getElementById('hitSound');
+
+    const wordList = [
+      "cat",
+      "bat",
+      "hat",
+      "mat",
+      "That cat sat on a mat.",
+      "A fat bat flew fast."
+    ];
+
+    let currentWord = wordList[0];
+    let score = 0;
+
+    function pickNewWord() {
+      currentWord = wordList[Math.floor(Math.random() * wordList.length)];
+      currentWordDisplay.textContent = `Say: "${currentWord}"`;
+      target.classList.remove('hit');
+    }
 
     function hitTarget() {
       target.classList.add('hit');
+      hitSound.currentTime = 0;
+      hitSound.play();
+      score++;
+      scoreDisplay.textContent = `Score: ${score}`;
       status.textContent = '🎉 Target hit!';
-    }
-
-    function resetTarget() {
-      target.classList.remove('hit');
-      status.textContent = 'Waiting...';
+      setTimeout(pickNewWord, 1500);
     }
 
     function startListening() {
-      resetTarget();
+      pickNewWord();
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
-      recognition.onstart = () => status.textContent = 'Listening... Say "cat"...';
+      recognition.onstart = () => status.textContent = 'Listening...';
 
       recognition.onresult = (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
         console.log('Heard:', transcript);
 
-        if (transcript.includes('cat')) {
+        if (transcript.includes(currentWord.toLowerCase())) {
           hitTarget();
-          detectionStatus.textContent = 'Status: 🟢 "cat" detected';
+          detectionStatus.textContent = `Status: 🟢 "${currentWord}" detected`;
           detectionStatus.className = 'detecting';
         } else {
-          detectionStatus.textContent = 'Status: 🔴 not "cat"';
+          detectionStatus.textContent = `Status: 🔴 not "${currentWord}"`;
           detectionStatus.className = 'not-detecting';
         }
       };

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>/æ/ Balloon Game</title>
+  <title>/æ/ Target Game</title>
   <style>
     body {
       background: #121212;
@@ -12,14 +12,17 @@
       text-align: center;
       padding: 2rem;
     }
-    #balloon {
-      width: 100px;
-      height: 140px;
-      background: pink;
-      border-radius: 50% 50% 45% 45%;
+    #target {
+      width: 120px;
+      height: 120px;
+      background: red;
+      border-radius: 50%;
       margin: 2rem auto;
-      transition: transform 0.1s ease;
-      transform: scale(1);
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #target.hit {
+      transform: translateY(100px) rotate(45deg) scale(0.5);
+      opacity: 0.2;
     }
     #status, #detection {
       font-size: 1.5rem;
@@ -43,59 +46,47 @@
   </style>
 </head>
 <body>
-  <h1>/æ/ Balloon Blaster</h1>
-  <div id="balloon"></div>
-  <button onclick="startListening()">🎤 Start /æ/ Blast</button>
+  <h1>🎯 Pronunciation Target: "cat"</h1>
+  <div id="target"></div>
+  <button onclick="startListening()">🎤 Say "cat"</button>
   <div id="status">Waiting...</div>
   <div id="detection" class="not-detecting">Status: ⏸ idle</div>
 
   <script>
-    let scale = 1;
-    let balloon = document.getElementById('balloon');
-    let status = document.getElementById('status');
-    let detectionStatus = document.getElementById('detection');
-    let growing = false;
-    let growthTimer;
+    const target = document.getElementById('target');
+    const status = document.getElementById('status');
+    const detectionStatus = document.getElementById('detection');
 
-    function growBalloon() {
-      if (!growing) return;
-      scale += 0.01;
-      balloon.style.transform = `scale(${scale})`;
-      if (scale >= 1.6) {
-        status.textContent = '💥 Balloon exploded!';
-        clearInterval(growthTimer);
-        growing = false;
-        detectionStatus.textContent = 'Status: ⏸ idle';
-        detectionStatus.className = '';
-      }
+    function hitTarget() {
+      target.classList.add('hit');
+      status.textContent = '🎉 Target hit!';
+    }
+
+    function resetTarget() {
+      target.classList.remove('hit');
+      status.textContent = 'Waiting...';
     }
 
     function startListening() {
+      resetTarget();
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
-      recognition.onstart = () => status.textContent = 'Listening... Say /æ/...';
+      recognition.onstart = () => status.textContent = 'Listening... Say "cat"...';
 
       recognition.onresult = (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
         console.log('Heard:', transcript);
 
-        if (transcript.includes('a') || transcript.includes('cat') || transcript.includes('aa')) {
-          if (!growing) {
-            growing = true;
-            status.textContent = '🫧 Detected /æ/ - Inflating...';
-            growthTimer = setInterval(growBalloon, 100);
-          }
-          detectionStatus.textContent = 'Status: 🟢 /æ/ detected';
+        if (transcript.includes('cat')) {
+          hitTarget();
+          detectionStatus.textContent = 'Status: 🟢 "cat" detected';
           detectionStatus.className = 'detecting';
         } else {
-          growing = false;
-          status.textContent = '❌ Wrong sound - Not /æ/';
-          detectionStatus.textContent = 'Status: 🔴 not /æ/';
+          detectionStatus.textContent = 'Status: 🔴 not "cat"';
           detectionStatus.className = 'not-detecting';
-          clearInterval(growthTimer);
         }
       };
 

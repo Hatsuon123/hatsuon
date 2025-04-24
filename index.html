@@ -21,9 +21,15 @@
       transition: transform 0.1s ease;
       transform: scale(1);
     }
-    #status {
+    #status, #detection {
       font-size: 1.5rem;
       margin-top: 1rem;
+    }
+    #detection.detecting {
+      color: limegreen;
+    }
+    #detection.not-detecting {
+      color: crimson;
     }
     button {
       font-size: 1.2rem;
@@ -41,11 +47,13 @@
   <div id="balloon"></div>
   <button onclick="startListening()">🎤 Start /æ/ Blast</button>
   <div id="status">Waiting...</div>
+  <div id="detection" class="not-detecting">Status: ⏸ idle</div>
 
   <script>
     let scale = 1;
     let balloon = document.getElementById('balloon');
     let status = document.getElementById('status');
+    let detectionStatus = document.getElementById('detection');
     let growing = false;
     let growthTimer;
 
@@ -57,6 +65,8 @@
         status.textContent = '💥 Balloon exploded!';
         clearInterval(growthTimer);
         growing = false;
+        detectionStatus.textContent = 'Status: ⏸ idle';
+        detectionStatus.className = '';
       }
     }
 
@@ -71,15 +81,20 @@
       recognition.onresult = (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
         console.log('Heard:', transcript);
+
         if (transcript.includes('a') || transcript.includes('cat') || transcript.includes('aa')) {
           if (!growing) {
             growing = true;
             status.textContent = '🫧 Detected /æ/ - Inflating...';
             growthTimer = setInterval(growBalloon, 100);
           }
+          detectionStatus.textContent = 'Status: 🟢 /æ/ detected';
+          detectionStatus.className = 'detecting';
         } else {
           growing = false;
           status.textContent = '❌ Wrong sound - Not /æ/';
+          detectionStatus.textContent = 'Status: 🔴 not /æ/';
+          detectionStatus.className = 'not-detecting';
           clearInterval(growthTimer);
         }
       };
